@@ -1,0 +1,32 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ====== Base Theme dùng chung ====== -->
+    <style name="Base.Theme.QuizGame" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/transparent</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <!-- ====== Theme chính của app ====== -->
+    <style name="Theme.QuizGame" parent="Base.Theme.QuizGame">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorSecondary">@color/purple_700</item>
+        <item name="android:windowBackground">@color/white</item>
+    </style>
+
+    <!-- ====== Theme riêng cho Splash Screen ====== -->
+    <style name="Theme.Splash" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:windowBackground">@drawable/splash_background</item>
+        <item name="android:statusBarColor">@color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- ====== Theme riêng cho Login Page ====== -->
+    <style name="Theme.Login" parent="Base.Theme.QuizGame">
+        <item name="colorPrimary">@color/blue_500</item>
+        <item name="colorSecondary">@color/blue_700</item>
+        <item name="android:windowBackground">@color/blue_50</item>
+    </style>
+
+</resources>
