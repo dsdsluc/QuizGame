@@ -10,7 +10,6 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
 
 public class Sign_Up_Page extends AppCompatActivity {
 
@@ -20,8 +19,8 @@ public class Sign_Up_Page extends AppCompatActivity {
     private TextView tvBackToLogin;
     private ProgressBar progressBarCircle;
 
-    // Firebase Auth
-    private FirebaseAuth auth;
+    // AuthHelper
+    private AuthHelper authHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,8 +36,8 @@ public class Sign_Up_Page extends AppCompatActivity {
         tvBackToLogin = findViewById(R.id.tvBackToLogin);
         progressBarCircle = findViewById(R.id.progressBarCircle);
 
-        // Firebase Auth
-        auth = FirebaseAuth.getInstance();
+        // Khởi tạo AuthHelper
+        authHelper = new AuthHelper();
 
         // Xử lý nút đăng ký
         btnSignUp.setOnClickListener(v -> {
@@ -47,39 +46,34 @@ public class Sign_Up_Page extends AppCompatActivity {
             String password = inputPassword.getText().toString().trim();
             String confirmPassword = inputConfirmPassword.getText().toString().trim();
 
-            // Kiểm tra dữ liệu
-            if (fullName.isEmpty() || email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                Toast.makeText(Sign_Up_Page.this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            setLoading(true);
 
-            if (!password.equals(confirmPassword)) {
-                Toast.makeText(Sign_Up_Page.this, "Mật khẩu không khớp", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            authHelper.register(fullName, email, password, confirmPassword, new AuthHelper.UserCallback() {
+                @Override
+                public void onSuccess(User user) {
+                    setLoading(false);
+                    Toast.makeText(Sign_Up_Page.this,
+                            "Đăng ký thành công! Xin chào " + user.getFullName(),
+                            Toast.LENGTH_SHORT).show();
+                    finish(); // Quay về Login
+                }
 
-            // Hiển thị ProgressBar
-            progressBarCircle.setVisibility(View.VISIBLE);
-            btnSignUp.setEnabled(false);
-
-            // Gọi Firebase tạo tài khoản
-            auth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(task -> {
-                        progressBarCircle.setVisibility(View.INVISIBLE);
-                        btnSignUp.setEnabled(true);
-
-                        if (task.isSuccessful()) {
-                            Toast.makeText(Sign_Up_Page.this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
-                            finish();
-                        } else {
-                            Toast.makeText(Sign_Up_Page.this,
-                                    "Đăng ký thất bại: " + task.getException().getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
+                @Override
+                public void onFailure(String errorMessage) {
+                    setLoading(false);
+                    Toast.makeText(Sign_Up_Page.this,
+                            "Đăng ký thất bại: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                }
+            });
         });
 
         // Xử lý quay về đăng nhập
-        tvBackToLogin.setOnClickListener(v -> finish()); // hoặc Intent sang LoginActivity
+        tvBackToLogin.setOnClickListener(v -> finish());
+    }
+
+    private void setLoading(boolean loading) {
+        progressBarCircle.setVisibility(loading ? View.VISIBLE : View.GONE);
+        btnSignUp.setEnabled(!loading);
     }
 }

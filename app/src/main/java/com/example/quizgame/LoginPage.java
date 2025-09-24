@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -12,79 +11,74 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class LoginPage extends AppCompatActivity {
 
-    private ImageView imageViewLogo;
     private EditText inputEmail, inputPassword;
     private MaterialButton btnLogin, btnGoogleLogin;
-    private TextView tvForgotPassword, tvRegister;
     private ProgressBar progressBarLogin;
+    private TextView tvForgotPassword, tvRegister;
 
-    private FirebaseAuth auth;
+    private AuthHelper authHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_page);
 
-        // --- Ánh xạ view ---
-        imageViewLogo = findViewById(R.id.imageView);
+        // Init views
         inputEmail = findViewById(R.id.inputEmail);
         inputPassword = findViewById(R.id.inputPassword);
         btnLogin = findViewById(R.id.btnLogin);
         btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
+        progressBarLogin = findViewById(R.id.progressBarLogin);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
         tvRegister = findViewById(R.id.tvRegister);
-        progressBarLogin = findViewById(R.id.progressBarLogin);
 
-        auth = FirebaseAuth.getInstance();
+        // Init AuthHelper
+        authHelper = new AuthHelper();
 
-        // --- Nút đăng nhập ---
+        // Xử lý login
         btnLogin.setOnClickListener(v -> {
             String email = inputEmail.getText().toString().trim();
             String password = inputPassword.getText().toString().trim();
 
-            if(email.isEmpty() || password.isEmpty()){
-                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            setLoading(true);
 
-            progressBarLogin.setVisibility(View.VISIBLE);
-            btnLogin.setEnabled(false);
+            authHelper.login(this, email, password, new AuthHelper.UserCallback() {
+                @Override
+                public void onSuccess(User user) {
+                    setLoading(false);
+                    UserSession.getInstance().setUser(user); // lưu vào session
+                    Toast.makeText(LoginPage.this,
+                            "Xin chào " + user.getFullName() + "!",
+                            Toast.LENGTH_SHORT).show();
+                    goToMain();
+                }
 
-            auth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(task -> {
-                        progressBarLogin.setVisibility(View.GONE);
-                        btnLogin.setEnabled(true);
-
-                        if(task.isSuccessful()){
-                            Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-                            Intent intent = new Intent(LoginPage.this, MainActivity.class);
-                            startActivity(intent);
-                            finish();
-                        } else {
-                            Toast.makeText(this, "Đăng nhập thất bại: " + task.getException().getMessage(),
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    });
+                @Override
+                public void onFailure(String errorMessage) {
+                    setLoading(false);
+                    Toast.makeText(LoginPage.this,
+                            "Đăng nhập thất bại: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                }
+            });
         });
 
-        // --- Nút Google Sign-In ---
+        // Đăng nhập bằng Google (chưa implement)
         btnGoogleLogin.setOnClickListener(v -> {
-            Toast.makeText(this, "Đăng nhập bằng Google", Toast.LENGTH_SHORT).show();
-            // TODO: Thêm Google Sign-In
+            Toast.makeText(this, "Google Login chưa được triển khai", Toast.LENGTH_SHORT).show();
         });
 
-        // --- Quên mật khẩu ---
+        // Quên mật khẩu
         tvForgotPassword.setOnClickListener(v -> {
             Intent intent = new Intent(LoginPage.this, Forgot_Password.class);
             startActivity(intent);
         });
 
-        // --- Chuyển sang trang đăng ký ---
+        // Đăng ký
         tvRegister.setOnClickListener(v -> {
             Intent intent = new Intent(LoginPage.this, Sign_Up_Page.class);
             startActivity(intent);
@@ -94,12 +88,38 @@ public class LoginPage extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        FirebaseUser user = auth.getCurrentUser();
-        if(user != null){
-            // User đã đăng nhập → chuyển thẳng MainActivity
-            Intent intent = new Intent(LoginPage.this, MainActivity.class);
-            startActivity(intent);
-            finish();
+        FirebaseUser firebaseUser = authHelper.getCurrentUser();
+        if (firebaseUser != null) {
+            // Load thông tin user từ DB bằng uid
+            setLoading(true);
+            String uid = firebaseUser.getUid();
+            authHelper.loadUserByUid(uid, new AuthHelper.UserCallback() {
+                @Override
+                public void onSuccess(User user) {
+                    setLoading(false);
+                    UserSession.getInstance().setUser(user);
+                    goToMain();
+                }
+
+                @Override
+                public void onFailure(String errorMessage) {
+                    setLoading(false);
+                    Toast.makeText(LoginPage.this,
+                            "Không thể tải dữ liệu người dùng: " + errorMessage,
+                            Toast.LENGTH_LONG).show();
+                }
+            });
         }
+    }
+
+    private void goToMain() {
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
+    }
+
+    private void setLoading(boolean isLoading) {
+        progressBarLogin.setVisibility(isLoading ? View.VISIBLE : View.GONE);
+        btnLogin.setEnabled(!isLoading);
+        btnGoogleLogin.setEnabled(!isLoading);
     }
 }
