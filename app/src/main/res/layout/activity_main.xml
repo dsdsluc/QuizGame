@@ -17,6 +17,7 @@
         android:src="@drawable/logout"
         android:background="@drawable/circle_bg"
         android:padding="6dp"
+        android:layout_marginTop="20dp"
         android:contentDescription="@string/app_name"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -59,7 +60,7 @@
                 android:text="Xin chào, User!"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tvScore"
@@ -67,7 +68,7 @@
                 android:layout_height="wrap_content"
                 android:text="Điểm: 0"
                 android:textSize="14sp"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tvLevel"
@@ -75,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:text="Level: 1"
                 android:textSize="14sp"
-                android:textColor="@android:color/white" />
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/tvRank"
@@ -83,7 +84,7 @@
                 android:layout_height="wrap_content"
                 android:text="Hạng: 0"
                 android:textSize="14sp"
-                android:textColor="@android:color/white"/>
+                android:textColor="@android:color/black"/>
         </LinearLayout>
     </LinearLayout>
 

@@ -16,6 +16,7 @@
         android:layout_height="8dp"
         android:max="100"
         android:progress="0"
+        android:layout_marginTop="20dp"
         android:progressTint="@color/orange_500"
         android:backgroundTint="@color/orange_100"
         app:layout_constraintTop_toTopOf="parent"
@@ -141,7 +142,7 @@
                 android:padding="20dp"
                 android:background="@drawable/card_bg"
                 android:elevation="4dp"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="20dp"/>
 
             <!-- Container cho 4 Option -->
             <LinearLayout
@@ -162,7 +163,7 @@
                     android:textAllCaps="false"
                     android:textSize="18sp"
                     app:cornerRadius="16dp"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_marginBottom="20dp"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_option2"
@@ -175,7 +176,7 @@
                     android:textAllCaps="false"
                     android:textSize="18sp"
                     app:cornerRadius="16dp"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_marginBottom="20dp"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_option3"
@@ -188,7 +189,7 @@
                     android:textAllCaps="false"
                     android:textSize="18sp"
                     app:cornerRadius="16dp"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_marginBottom="20dp"/>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_option4"
