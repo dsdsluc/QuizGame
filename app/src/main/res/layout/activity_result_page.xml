@@ -5,130 +5,139 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#FF9860"
-    android:id="@+id/main"
-    android:padding="16dp">
+    android:id="@+id/main">
 
-    <!-- Quiz Title -->
-    <TextView
-        android:id="@+id/quiz_title_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Quiz Game"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:gravity="center"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Banner + Icons -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#D1302A"
-        android:layout_marginBottom="32dp"
-        android:padding="16dp">
-
-        <!-- Icons Row -->
-        <LinearLayout
-            android:id="@+id/icons_row"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-            <ImageView
-                android:id="@+id/icon1"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@drawable/icon1"
-                android:contentDescription="Icon 1"
-                android:layout_margin="8dp" />
-
-            <ImageView
-                android:id="@+id/icon2"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@drawable/icon2"
-                android:contentDescription="Icon 2"
-                android:layout_margin="8dp" />
-
-            <ImageView
-                android:id="@+id/icon3"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:src="@drawable/icon3"
-                android:contentDescription="Icon 3"
-                android:layout_margin="8dp" />
-
-        </LinearLayout>
-
-        <!-- Congratulations Text -->
-        <TextView
-            android:id="@+id/congrats_text_view"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="CONGRATULATIONS!"
-            android:textColor="@android:color/white"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            app:layout_constraintTop_toBottomOf="@id/icons_row"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="16dp" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- Correct/Wrong Answers -->
-    <TextView
-        android:id="@+id/correct_answers_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Correct Answer: 0"
-        android:textSize="20sp"
-        android:textColor="@android:color/black"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:id="@+id/wrong_answers_text_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Wrong Answer: 0"
-        android:textSize="20sp"
-        android:textColor="@android:color/black"
-        android:layout_marginBottom="48dp" />
-
-    <!-- Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center">
+        android:layout_margin="16dp"
+        android:orientation="vertical"
+        android:layout_gravity="center">
 
-        <Button
-            android:id="@+id/play_again_button"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+        <!-- Quiz Title -->
+        <TextView
+            android:id="@+id/quiz_title_text_view"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="PLAY AGAIN"
-            android:backgroundTint="#FFFFFF"
-            android:textColor="#FF9860"
-            android:textStyle="bold" />
+            android:text="Quiz Game"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:gravity="center"
+            android:layout_marginBottom="16dp"
+            android:layout_marginTop="20dp"/>
 
-        <Button
-            android:id="@+id/exit_button"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+        <!-- Banner + Icons -->
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="EXIT"
-            android:backgroundTint="#FFFFFF"
-            android:textColor="#FF9860"
-            android:textStyle="bold" />
+            android:background="#D1302A"
+            android:layout_marginBottom="32dp"
+            android:padding="16dp">
+
+            <!-- Icons Row -->
+            <LinearLayout
+                android:id="@+id/icons_row"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent">
+
+                <ImageView
+                    android:id="@+id/icon1"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/icon1"
+                    android:contentDescription="Icon 1"
+                    android:layout_margin="8dp" />
+
+                <ImageView
+                    android:id="@+id/icon2"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/icon2"
+                    android:contentDescription="Icon 2"
+                    android:layout_margin="8dp" />
+
+                <ImageView
+                    android:id="@+id/icon3"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/icon3"
+                    android:contentDescription="Icon 3"
+                    android:layout_margin="8dp" />
+
+            </LinearLayout>
+
+            <!-- Congratulations Text -->
+            <TextView
+                android:id="@+id/congrats_text_view"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="CONGRATULATIONS!"
+                android:textColor="@android:color/white"
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                app:layout_constraintTop_toBottomOf="@id/icons_row"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="16dp" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <!-- Correct/Wrong Answers -->
+        <TextView
+            android:id="@+id/correct_answers_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Correct Answer: 0"
+            android:textSize="20sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/wrong_answers_text_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Wrong Answer: 0"
+            android:textSize="20sp"
+            android:textColor="@android:color/black"
+            android:layout_marginBottom="48dp" />
+
+        <!-- Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <Button
+                android:id="@+id/play_again_button"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="PLAY AGAIN"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#FF9860"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/exit_button"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="EXIT"
+                android:backgroundTint="#FFFFFF"
+                android:textColor="#FF9860"
+                android:textStyle="bold" />
+        </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>
