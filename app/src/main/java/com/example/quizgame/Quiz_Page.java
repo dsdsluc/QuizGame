@@ -31,6 +31,7 @@ public class Quiz_Page extends AppCompatActivity {
     private String gameMode;
 
     private CountDownTimer timer;
+    private long startTime;
     private final long QUESTION_TIME = 30_000;
 
 
@@ -57,6 +58,7 @@ public class Quiz_Page extends AppCompatActivity {
         btnFinish = findViewById(R.id.btn_finish);
 
         progressBar = findViewById(R.id.progressBar);
+        startTime = System.currentTimeMillis();
 
         // --- Lấy dữ liệu từ Intent + Session ---
         gameMode = getIntent().getStringExtra("GAME_MODE");
@@ -106,13 +108,11 @@ public class Quiz_Page extends AppCompatActivity {
                 // Vẫn còn câu hỏi → hiển thị câu tiếp theo
                 showQuestion();
             } else {
-                // Hết câu hỏi → mở màn hình Result
                 finishQuiz();
-                Intent intent = new Intent(Quiz_Page.this, ResultPage.class);
-                startActivity(intent);
                 finish();
             }
         });
+
 
 
         // --- Finish ---
@@ -265,13 +265,23 @@ public class Quiz_Page extends AppCompatActivity {
                 .child(currentUser.getUid());
         userRef.setValue(currentUser);
 
+        long endTime = System.currentTimeMillis();
+        int totalTimePlayed = (int) ((endTime - startTime) / 1000);
+
         Toast.makeText(this, "Quiz kết thúc! Điểm: " + currentUser.getScore(), Toast.LENGTH_LONG).show();
 
-
         Intent intent = new Intent(Quiz_Page.this, ResultPage.class);
+        intent.putExtra("score", currentUser.getScore());
+        intent.putExtra("correct", currentUser.getCorrect());
+        intent.putExtra("wrong", currentUser.getWrong());
+
+         intent.putExtra("totalTime", totalTimePlayed);
+        intent.putExtra("myRank", currentUser.getRank());
+
         startActivity(intent);
         finish();
     }
+
 
     private void endSurvivalMode() {
         // Không update điểm vào Firebase, chỉ kết thúc

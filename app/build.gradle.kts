@@ -39,8 +39,12 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.firebase.auth)
+
     implementation(libs.firebase.database)
+
+    implementation("nl.dionsegijn:konfetti-xml:2.0.2")
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
 }

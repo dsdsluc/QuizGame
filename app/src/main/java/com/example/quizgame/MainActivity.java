@@ -23,7 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
 
-    private MaterialButton btnStart;
+    private MaterialButton btnStart,  btnLeaderboard, btnAchievements;
     private ImageView imgLogout;
     private TextView txtWelcome, txtScore, tvLevel, tvRank;
     private Spinner spinnerGameMode;
@@ -42,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
 
         // --- Init view ---
         btnStart = findViewById(R.id.btnStart);
+        btnLeaderboard = findViewById(R.id.btnLeaderboard);
+        btnAchievements = findViewById(R.id.btnAchievements);
         imgLogout = findViewById(R.id.imgLogout);
         txtWelcome = findViewById(R.id.txtWelcome);
         txtScore = findViewById(R.id.tvScore);
@@ -95,6 +97,15 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, Quiz_Page.class);
             intent.putExtra("GAME_MODE", selectedMode);
             startActivity(intent);
+        });
+        btnLeaderboard.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, Leaderboard.class);
+            startActivity(intent);
+        });
+
+        btnAchievements.setOnClickListener(v -> {
+            // Nếu bạn có activity achievements, xử lý chuyển màn hình ở đây
+            Toast.makeText(MainActivity.this, "Chức năng Thành tích chưa có", Toast.LENGTH_SHORT).show();
         });
 
         // --- Logout ---

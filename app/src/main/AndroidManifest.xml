@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.QuizGame">
         <activity
+            android:name=".Leaderboard"
+            android:exported="false" />
+        <activity
             android:name=".ResultPage"
             android:exported="false" />
         <activity
