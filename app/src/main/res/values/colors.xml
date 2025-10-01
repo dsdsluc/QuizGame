@@ -28,4 +28,6 @@
     <color name="black">#000000</color>
 
     <color name="orange_400">#FFB74D</color>
+
+    <color name="gradient_background">#FFA726</color>
 </resources>
