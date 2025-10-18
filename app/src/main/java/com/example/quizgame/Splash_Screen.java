@@ -33,7 +33,7 @@ public class Splash_Screen extends AppCompatActivity {
         title.startAnimation(animation);
 
         // Delay 3s rồi check user
-        new Handler().postDelayed(() -> {
+        new Handler(getMainLooper()).postDelayed(() -> {
             FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
 
             if (firebaseUser != null && UserSession.getInstance().getUser() != null) {
@@ -47,5 +47,6 @@ public class Splash_Screen extends AppCompatActivity {
             }
             finish();
         }, SPLASH_DELAY);
+
     }
 }

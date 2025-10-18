@@ -104,9 +104,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnAchievements.setOnClickListener(v -> {
-            // Nếu bạn có activity achievements, xử lý chuyển màn hình ở đây
-            Toast.makeText(MainActivity.this, "Chức năng Thành tích chưa có", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(MainActivity.this, MatchHistoryActivity.class);
+            startActivity(intent);
         });
+
 
         // --- Logout ---
         imgLogout.setOnClickListener(v -> {
