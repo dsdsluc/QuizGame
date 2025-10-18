@@ -265,6 +265,9 @@ public class Quiz_Page extends AppCompatActivity {
                 .child(currentUser.getUid());
         userRef.setValue(currentUser);
 
+        // 👉 Gọi hàm lưu lịch sử trận đấu
+        saveMatchHistory();
+
         long endTime = System.currentTimeMillis();
         int totalTimePlayed = (int) ((endTime - startTime) / 1000);
 
@@ -274,8 +277,7 @@ public class Quiz_Page extends AppCompatActivity {
         intent.putExtra("score", currentUser.getScore());
         intent.putExtra("correct", currentUser.getCorrect());
         intent.putExtra("wrong", currentUser.getWrong());
-
-         intent.putExtra("totalTime", totalTimePlayed);
+        intent.putExtra("totalTime", totalTimePlayed);
         intent.putExtra("myRank", currentUser.getRank());
 
         startActivity(intent);
@@ -298,5 +300,41 @@ public class Quiz_Page extends AppCompatActivity {
         int progress = (int) ((current * 100.0f) / total);
         progressBar.setProgress(progress);
     }
+
+    private void saveMatchHistory() {
+        DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference("match_history");
+
+        String matchId = historyRef.push().getKey(); // Tạo ID tự động
+        if (matchId == null) return;
+
+        long endTime = System.currentTimeMillis();
+        long timeTakenSeconds = (endTime - startTime) / 1000;
+
+        // Dữ liệu trận đấu
+        MatchHistory history = new MatchHistory(
+                matchId,
+                currentUser.getUid(),
+                currentUser.getFullName(),
+                questionList.get(0).getTopic(),
+                gameMode,
+                currentUser.getLevel(),
+                String.valueOf(startTime),
+                String.valueOf(endTime),
+                questionList.size(),
+                currentUser.getCorrect(),
+                currentUser.getWrong(),
+                currentUser.getScore(),
+                currentUser.getAccuracy(),
+                (int) timeTakenSeconds
+        );
+
+
+        historyRef.child(matchId).setValue(history)
+                .addOnSuccessListener(aVoid ->
+                        Toast.makeText(this, "Đã lưu lịch sử trận đấu!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Lỗi lưu lịch sử: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
 
 }

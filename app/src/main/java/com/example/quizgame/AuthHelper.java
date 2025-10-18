@@ -167,10 +167,6 @@ public class AuthHelper {
     }
 
     // ================== CALLBACK ==================
-    public interface AuthCallback {
-        void onSuccess(FirebaseUser user);
-        void onFailure(String errorMessage);
-    }
     // Callback mới
     public interface UserCallback {
         void onSuccess(User user);
