@@ -5,22 +5,34 @@ public class User {
     private String fullName;
     private String email;
 
-    // Thông tin cơ bản
-    private int score;          // Tổng điểm
+    // ===== Lifetime (tích lũy) =====
+    private int score;          // Tổng điểm tích lũy
     private int level;          // Level hiện tại
-    private int rank;           // Hạng trên bảng xếp hạng
-    private int correct;        // Tổng số câu trả lời đúng (cả các lần chơi)
-    private int wrong;          // Tổng số câu trả lời sai (cả các lần chơi)
-    private int totalQuestions; // Tổng số câu hỏi đã chơi
-    private int currentStreak;  // Streak hiện tại
-    private int maxStreak;      // Streak dài nhất
+    private int rank;           // Hạng trên BXH
+    private int correct;        // Tổng đúng (tích lũy)
+    private int wrong;          // Tổng sai (tích lũy)
+    private int totalQuestions; // Tổng số câu (tích lũy)
+    private int currentStreak;  // Streak hiện tại (tích lũy)
+    private int maxStreak;      // Streak dài nhất (tích lũy)
 
-    // Thông tin chế độ chơi
+    // ===== Thông tin chế độ chơi =====
     private String gameMode;    // Classic / Survival / TimeAttack
 
-    // Firebase yêu cầu constructor mặc định
-    public User() {}
+    // ===== Per-game (chỉ số của TRẬN hiện tại) =====
+    private int gameScore;
+    private int gameCorrect;
+    private int gameWrong;
+    private int gameTotalQuestions;
+    private int gameStreak;
+    private int gameMaxStreak;
 
+    // Firebase yêu cầu constructor mặc định
+    public User() {
+        // đảm bảo per-game = 0 khi Firebase khởi tạo
+        resetGameOnly();
+    }
+
+    // GIỮ NGUYÊN constructor bạn đang dùng ở nhiều nơi (KHÔNG đổi chữ ký)
     public User(String uid, String fullName, String email,
                 int score, int level, int rank,
                 int correct, int wrong, int totalQuestions,
@@ -37,9 +49,12 @@ public class User {
         this.currentStreak = currentStreak;
         this.maxStreak = maxStreak;
         this.gameMode = gameMode;
+
+        // Khởi tạo per-game về 0 để không ảnh hưởng code cũ
+        resetGameOnly();
     }
 
-    // Getter & Setter
+    // ===== Getter & Setter =====
     public String getUid() { return uid; }
     public String getFullName() { return fullName; }
     public String getEmail() { return email; }
@@ -66,25 +81,53 @@ public class User {
     public void setMaxStreak(int maxStreak) { this.maxStreak = maxStreak; }
     public void setGameMode(String gameMode) { this.gameMode = gameMode; }
 
-    // --- Hỗ trợ Quiz Logic ---
+    // ====== Getter per-game (để lưu lịch sử mỗi trận) ======
+    public int getGameScore() { return gameScore; }
+    public int getGameCorrect() { return gameCorrect; }
+    public int getGameWrong() { return gameWrong; }
+    public int getGameTotalQuestions() { return gameTotalQuestions; }
+    public int getGameStreak() { return gameStreak; }
+    public int getGameMaxStreak() { return gameMaxStreak; }
+    public float getGameAccuracy() {
+        if (gameTotalQuestions == 0) return 0f;
+        return (gameCorrect * 100f) / (float) gameTotalQuestions;
+    }
+
+    // ====== Hỗ trợ Quiz Logic ======
     public void addCorrectAnswer(int points) {
+        // --- Lifetime ---
         this.correct += 1;
         this.totalQuestions += 1;
         this.currentStreak += 1;
         if (currentStreak > maxStreak) maxStreak = currentStreak;
-        this.score += points + getStreakBonus();
+        this.score += points + getStreakBonus(this.currentStreak);
+
+        // --- Per-game ---
+        this.gameCorrect += 1;
+        this.gameTotalQuestions += 1;
+        this.gameStreak += 1;
+        if (gameStreak > gameMaxStreak) gameMaxStreak = gameStreak;
+        this.gameScore += points + getStreakBonus(this.gameStreak);
+
         checkLevelUp();
     }
 
     public void addWrongAnswer() {
+        // --- Lifetime ---
         this.wrong += 1;
         this.totalQuestions += 1;
-        this.currentStreak = 0; // reset streak
+        this.currentStreak = 0;
+
+        // --- Per-game ---
+        this.gameWrong += 1;
+        this.gameTotalQuestions += 1;
+        this.gameStreak = 0;
+
         checkLevelUp();
     }
 
-    private int getStreakBonus() {
-        return currentStreak >= 3 ? currentStreak / 3 : 0;
+    private int getStreakBonus(int streak) {
+        return streak >= 3 ? streak / 3 : 0;
     }
 
     private void checkLevelUp() {
@@ -92,14 +135,27 @@ public class User {
         if (newLevel > level) level = newLevel;
     }
 
-    public void resetQuiz(String mode) {
-        this.gameMode = mode;
-        this.currentStreak = 0;
+    // Reset chỉ số TRẬN (không ảnh hưởng lifetime)
+    private void resetGameOnly() {
+        this.gameScore = 0;
+        this.gameCorrect = 0;
+        this.gameWrong = 0;
+        this.gameTotalQuestions = 0;
+        this.gameStreak = 0;
+        this.gameMaxStreak = 0;
     }
 
-    // Tỷ lệ trả lời đúng trung bình tất cả lần chơi
+    // Gọi khi bắt đầu ván mới
+    public void resetQuiz(String mode) {
+        this.gameMode = mode;
+        // tuỳ ý: currentStreak (lifetime) có reset không
+        this.currentStreak = 0;
+        resetGameOnly();
+    }
+
+    // Accuracy tích lũy
     public float getAccuracy() {
         if (totalQuestions == 0) return 0f;
-        return (correct * 100f) / totalQuestions;
+        return (correct * 100f) / (float) totalQuestions;
     }
 }

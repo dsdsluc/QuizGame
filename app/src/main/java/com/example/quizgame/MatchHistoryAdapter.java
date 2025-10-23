@@ -35,17 +35,17 @@ public class MatchHistoryAdapter extends RecyclerView.Adapter<MatchHistoryAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         MatchHistory match = historyList.get(position);
 
+        // --- Format ngày từ endTime (String millis) ---
         String dateString = "Không rõ";
-        long endTime = 0;
-
+        long endTimeMillis = 0L;
         try {
-            endTime = Long.parseLong(String.valueOf(match.getEndTime()));
+            String et = match.getEndTime(); // có thể là String millis
+            if (et != null && !et.isEmpty()) endTimeMillis = Long.parseLong(et);
         } catch (Exception ignored) {}
-
-        if (endTime > 0) {
+        if (endTimeMillis > 0) {
             @SuppressLint("SimpleDateFormat")
             SimpleDateFormat sdf = new SimpleDateFormat("HH:mm, dd/MM/yyyy", Locale.getDefault());
-            dateString = sdf.format(new Date(endTime));
+            dateString = sdf.format(new Date(endTimeMillis));
         }
 
         holder.tvDate.setText("🗓 " + dateString);
@@ -53,13 +53,20 @@ public class MatchHistoryAdapter extends RecyclerView.Adapter<MatchHistoryAdapte
         holder.tvQuestions.setText("✔ Đúng: " + match.getCorrectCount() + " | ❌ Sai: " + match.getWrongCount());
         holder.tvTime.setText("⏱ Thời gian: " + match.getDuration() + " giây");
 
-        // Màu nền theo điểm
-        if (match.getScore() >= 80) {
-            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#C8E6C9"));
-        } else if (match.getScore() >= 50) {
-            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFF9C4"));
+        // --- Hiển thị chế độ chơi (nếu layout có tvMode) ---
+        if (holder.tvMode != null) {
+            String mode = match.getGameMode(); // "Classic" | "Sinh tồn" | ...
+            holder.tvMode.setText(mode != null ? mode : "Unknown");
+        }
+
+        // --- Màu nền theo điểm ---
+        int sc = match.getScore();
+        if (sc >= 80) {
+            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#C8E6C9")); // xanh nhạt
+        } else if (sc >= 50) {
+            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFF9C4")); // vàng nhạt
         } else {
-            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFCDD2"));
+            holder.cardContainer.setCardBackgroundColor(Color.parseColor("#FFCDD2")); // đỏ nhạt
         }
     }
 
@@ -69,7 +76,7 @@ public class MatchHistoryAdapter extends RecyclerView.Adapter<MatchHistoryAdapte
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvDate, tvScore, tvQuestions, tvTime;
+        TextView tvDate, tvScore, tvQuestions, tvTime, tvMode; // <-- thêm tvMode
         CardView cardContainer;
 
         public ViewHolder(@NonNull View itemView) {
@@ -78,6 +85,7 @@ public class MatchHistoryAdapter extends RecyclerView.Adapter<MatchHistoryAdapte
             tvScore = itemView.findViewById(R.id.tvScore);
             tvQuestions = itemView.findViewById(R.id.tvQuestions);
             tvTime = itemView.findViewById(R.id.tvTime);
+            tvMode = itemView.findViewById(R.id.tvMode);
             cardContainer = itemView.findViewById(R.id.cardContainer);
         }
     }

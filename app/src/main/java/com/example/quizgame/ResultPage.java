@@ -86,7 +86,6 @@ public class ResultPage extends AppCompatActivity {
 // Nút Thoát -> thoát app
         btnExit.setOnClickListener(v -> {
             finishAffinity(); // Đóng toàn bộ activity và thoát app
-            System.exit(0);   // Thoát hoàn toàn tiến trình (optional)
         });
 
         // Hiển thị leaderboard
@@ -97,6 +96,7 @@ public class ResultPage extends AppCompatActivity {
     }
 
     private void showLeaderboardNeighbors() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
         usersRef.get().addOnSuccessListener(snapshot -> {
@@ -156,7 +156,7 @@ public class ResultPage extends AppCompatActivity {
                 .spread(360) // tỏa tròn
                 .angle(Angle.TOP) // bắn từ trên xuống
                 .position(new Position.Relative(0.5, 0.3)) // vị trí giữa màn hình
-                .colors(Arrays.asList(0xfce18a, 0xff726d, 0xf4306d, 0xb48def))
+                .colors(Arrays.asList(0xFFFCE18A, 0xFFFF726D, 0xFFF4306D, 0xFFB48DEF))
                 .build();
 
         konfettiView.start(party);

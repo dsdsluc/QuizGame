@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
@@ -36,26 +37,45 @@ public class MatchHistoryActivity extends AppCompatActivity {
         userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         historyRef = FirebaseDatabase.getInstance().getReference("match_history");
 
+        MaterialToolbar topAppBar = findViewById(R.id.topAppBar);
+        topAppBar.setTitle("Lịch sử trận");
+
+        topAppBar.setNavigationOnClickListener(v -> finish());
+
 
         loadHistory();
     }
 
     private void loadHistory() {
-        // Lấy tối đa 10 trận mới nhất
-        historyRef.limitToLast(10).addListenerForSingleValueEvent(new ValueEventListener() {
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Chỉ lấy lịch sử của user hiện tại
+        Query q = historyRef.orderByChild("userId").equalTo(uid).limitToLast(50);
+
+        q.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 historyList.clear();
                 for (DataSnapshot data : snapshot.getChildren()) {
                     MatchHistory match = data.getValue(MatchHistory.class);
-                    if (match != null) {
-                        historyList.add(match);
-                    }
+                    if (match != null) historyList.add(match);
                 }
 
-                // Đảo ngược danh sách (để trận mới nhất lên đầu)
-                Collections.reverse(historyList);
+                // endTime/startTime đang là String -> ép long để sort mới nhất lên đầu
+                Collections.sort(historyList, (a, b) -> {
+                    long ea = safeParseLong(a.getEndTime());
+                    long eb = safeParseLong(b.getEndTime());
+                    return Long.compare(eb, ea); // desc
+                });
 
+                // cắt top 10 nếu muốn
+                if (historyList.size() > 10) {
+                    historyList = new ArrayList<>(historyList.subList(0, 10));
+                }
+
+                adapter = new MatchHistoryAdapter(historyList);
+                recyclerHistory.setAdapter(adapter);
                 adapter.notifyDataSetChanged();
             }
 
@@ -63,4 +83,9 @@ public class MatchHistoryActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
+
+    private long safeParseLong(String s) {
+        try { return Long.parseLong(s); } catch (Exception e) { return 0L; }
+    }
+
 }

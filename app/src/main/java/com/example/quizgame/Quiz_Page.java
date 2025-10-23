@@ -62,6 +62,7 @@ public class Quiz_Page extends AppCompatActivity {
 
         // --- Lấy dữ liệu từ Intent + Session ---
         gameMode = getIntent().getStringExtra("GAME_MODE");
+
         currentUser = UserSession.getInstance().getUser();
         if (currentUser == null) {
             Toast.makeText(this, "User chưa đăng nhập", Toast.LENGTH_SHORT).show();
@@ -103,13 +104,11 @@ public class Quiz_Page extends AppCompatActivity {
 
         // --- Next ---
         btnNext.setOnClickListener(v -> {
-            questionNumber++;
-            if (questionNumber < questionList.size()) {
-                // Vẫn còn câu hỏi → hiển thị câu tiếp theo
-                showQuestion();
-            } else {
+            if (isLastQuestion()) {
                 finishQuiz();
-                finish();
+            } else {
+                questionNumber++;
+                showQuestion();
             }
         });
 
@@ -171,15 +170,16 @@ public class Quiz_Page extends AppCompatActivity {
             @Override
             public void onFinish() {
                 tvTime.setText("⏰ 0s");
-
                 if ("Sinh tồn".equals(gameMode)) {
                     Toast.makeText(Quiz_Page.this, "Hết thời gian! Bạn thua!", Toast.LENGTH_SHORT).show();
-                    endSurvivalMode(); // Kết thúc quiz, quay MainActivity
+                    endSurvivalMode();
                 } else {
-                    // Chế độ khác: tính là sai, highlight đáp án đúng
+                    // Classic: coi như sai + khóa nút
                     currentUser.addWrongAnswer();
+                    disableOptionButtons();
                     highlightCorrectAnswer();
                     updateUI();
+
                 }
             }
         }.start();
@@ -217,11 +217,12 @@ public class Quiz_Page extends AppCompatActivity {
 
         // Update UI
         updateUI();
+
     }
     private void updateUI() {
-        tvCorrect.setText("Đúng: " + currentUser.getCorrect());
-        tvWrong.setText("Sai: " + currentUser.getWrong());
-        tvScore.setText("Điểm: " + currentUser.getScore());
+        tvCorrect.setText("Đúng: " + currentUser.getGameCorrect());
+        tvWrong.setText("Sai: " + currentUser.getGameWrong());
+        tvScore.setText("Điểm: " + currentUser.getGameScore());
         tvLevel.setText("Level: " + currentUser.getLevel());
     }
 
@@ -274,14 +275,14 @@ public class Quiz_Page extends AppCompatActivity {
         Toast.makeText(this, "Quiz kết thúc! Điểm: " + currentUser.getScore(), Toast.LENGTH_LONG).show();
 
         Intent intent = new Intent(Quiz_Page.this, ResultPage.class);
-        intent.putExtra("score", currentUser.getScore());
-        intent.putExtra("correct", currentUser.getCorrect());
-        intent.putExtra("wrong", currentUser.getWrong());
+        intent.putExtra("score",     currentUser.getGameScore());
+        intent.putExtra("correct",   currentUser.getGameCorrect());
+        intent.putExtra("wrong",     currentUser.getGameWrong());
         intent.putExtra("totalTime", totalTimePlayed);
-        intent.putExtra("myRank", currentUser.getRank());
-
+        intent.putExtra("myRank",    currentUser.getRank());
         startActivity(intent);
         finish();
+
     }
 
 
@@ -296,44 +297,65 @@ public class Quiz_Page extends AppCompatActivity {
 
     private void updateProgressBar() {
         int total = questionList.size();
-        int current = questionNumber + 1; // questionNumber bắt đầu từ 0
-        int progress = (int) ((current * 100.0f) / total);
-        progressBar.setProgress(progress);
+        int current = questionNumber + 1;
+        progressBar.setMax(total);
+        progressBar.setProgress(current);
     }
+
 
     private void saveMatchHistory() {
         DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference("match_history");
 
-        String matchId = historyRef.push().getKey(); // Tạo ID tự động
+        String matchId = historyRef.push().getKey();
         if (matchId == null) return;
 
         long endTime = System.currentTimeMillis();
         long timeTakenSeconds = (endTime - startTime) / 1000;
 
-        // Dữ liệu trận đấu
+        // topic an toàn null
+        String topic = (questionList.isEmpty() || questionList.get(0).getTopic() == null)
+                ? "unknown" : questionList.get(0).getTopic();
+
+
         MatchHistory history = new MatchHistory(
                 matchId,
                 currentUser.getUid(),
                 currentUser.getFullName(),
-                questionList.get(0).getTopic(),
+                topic,
                 gameMode,
                 currentUser.getLevel(),
                 String.valueOf(startTime),
                 String.valueOf(endTime),
-                questionList.size(),
-                currentUser.getCorrect(),
-                currentUser.getWrong(),
-                currentUser.getScore(),
-                currentUser.getAccuracy(),
+                currentUser.getGameTotalQuestions(),
+                currentUser.getGameCorrect(),
+                currentUser.getGameWrong(),
+                currentUser.getGameScore(),
+                currentUser.getGameAccuracy(),
                 (int) timeTakenSeconds
         );
-
 
         historyRef.child(matchId).setValue(history)
                 .addOnSuccessListener(aVoid ->
                         Toast.makeText(this, "Đã lưu lịch sử trận đấu!", Toast.LENGTH_SHORT).show())
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Lỗi lưu lịch sử: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (timer != null) timer.cancel();
+        super.onDestroy();
+    }
+
+    private void disableOptionButtons() {
+        btnOption1.setEnabled(false);
+        btnOption2.setEnabled(false);
+        btnOption3.setEnabled(false);
+        btnOption4.setEnabled(false);
+    }
+
+    private boolean isLastQuestion() {
+        return questionNumber == questionList.size() - 1;
     }
 
 
