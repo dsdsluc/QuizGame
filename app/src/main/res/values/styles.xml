@@ -22,5 +22,19 @@
         <item name="android:layout_weight">1</item>
         <item name="cornerRadius">28dp</item>
     </style>
+    <style name="MyAlertDialogStyle" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="materialAlertDialogTitleTextStyle">@style/MyDialogTitle</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MyDialogBody</item>
+    </style>
+
+    <style name="MyDialogTitle" parent="MaterialAlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/orange_700</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="MyDialogBody" parent="MaterialAlertDialog.MaterialComponents.Body.Text">
+        <item name="android:textColor">@color/black</item>
+    </style>
+
 
 </resources>

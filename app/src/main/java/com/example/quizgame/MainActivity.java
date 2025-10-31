@@ -2,6 +2,7 @@ package com.example.quizgame;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -13,47 +14,61 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.android.material.navigation.NavigationView;
 
-public class MainActivity extends AppCompatActivity {
 
-    private MaterialButton btnStart,  btnLeaderboard, btnAchievements;
-    private ImageView imgLogout;
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener {
+
+    // drawer
+    private DrawerLayout drawerLayout;
+    private NavigationView navView;
+
+    // UI chính
+    private MaterialButton btnStart, btnLeaderboard, btnAchievements;
+    private ImageView imgLogout, imgMenu;
     private TextView txtWelcome, txtScore, tvLevel, tvRank;
     private Spinner spinnerGameMode;
     private ProgressBar progressLoading;
 
     private AuthHelper authHelper;
-    private String selectedMode = "Cơ bản";
 
+    // giá trị chọn
+    private String selectedMode = "Classic";   // từ spinner
+    private String selectedTopic = null;       // từ drawer (science / music / history ...)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);   // layout mới có DrawerLayout
 
-        // --- Init view ---
-        btnStart = findViewById(R.id.btnStart);
-        btnLeaderboard = findViewById(R.id.btnLeaderboard);
+        // 1. Ánh xạ drawer + nav
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navView      = findViewById(R.id.navView);
+
+        // rất quan trọng: gán listener cho NavigationView
+        navView.setNavigationItemSelectedListener(this);
+
+        // 2. Ánh xạ view trong content
+        imgMenu         = findViewById(R.id.imgMenu);
+        imgLogout       = findViewById(R.id.imgLogout);
+        btnStart        = findViewById(R.id.btnStart);
+        btnLeaderboard  = findViewById(R.id.btnLeaderboard);
         btnAchievements = findViewById(R.id.btnAchievements);
-        imgLogout = findViewById(R.id.imgLogout);
-        txtWelcome = findViewById(R.id.txtWelcome);
-        txtScore = findViewById(R.id.tvScore);
-        tvLevel = findViewById(R.id.tvLevel);
-        tvRank = findViewById(R.id.tvRank);
+        txtWelcome      = findViewById(R.id.txtWelcome);
+        txtScore        = findViewById(R.id.tvScore);
+        tvLevel         = findViewById(R.id.tvLevel);
+        tvRank          = findViewById(R.id.tvRank);
         spinnerGameMode = findViewById(R.id.spinnerGameMode);
         progressLoading = findViewById(R.id.progressLoading);
 
-        // Init AuthHelper
         authHelper = new AuthHelper();
 
-        // Lấy user từ session
+        // 3. Lấy user từ session
         User currentUser = UserSession.getInstance().getUser();
         if (currentUser != null) {
             txtWelcome.setText("Xin chào, " + currentUser.getFullName());
@@ -61,16 +76,102 @@ public class MainActivity extends AppCompatActivity {
             tvLevel.setText("Level: " + currentUser.getLevel());
             tvRank.setText("Hạng: " + currentUser.getRank());
         } else {
-            Intent intent = new Intent(MainActivity.this, LoginPage.class);
+            // chưa login → đá về login
+            startActivity(new Intent(this, LoginPage.class));
+            finish();
+            return;
+        }
+
+        // 4. Nút menu mở drawer
+        imgMenu.setOnClickListener(v ->
+                drawerLayout.openDrawer(GravityCompat.START)
+        );
+
+        // 5. Spinner chọn mode
+        setupGameModeSpinner();
+
+
+        // 7. Nút Start
+        btnStart.setOnClickListener(v -> {
+            User user = UserSession.getInstance().getUser();
+            if (user != null) {
+                user.resetQuiz(selectedMode);   // reset điểm / đúng / sai cho lần chơi này
+            }
+
+            Intent intent = new Intent(MainActivity.this, Quiz_Page.class);
+            intent.putExtra("GAME_MODE", selectedMode);
+            if (selectedTopic != null) {
+                intent.putExtra("TOPIC", selectedTopic);
+            }
             startActivity(intent);
+        });
+
+        // 8. Nút leaderboard
+        btnLeaderboard.setOnClickListener(v ->
+                startActivity(new Intent(this, Leaderboard.class))
+        );
+
+        // 9. Nút thành tích
+        btnAchievements.setOnClickListener(v ->
+                startActivity(new Intent(this, MatchHistoryActivity.class))
+        );
+
+        // 10. Logout
+        imgLogout.setOnClickListener(v -> {
+            authHelper.logout();
+            UserSession.getInstance().clear();
+            Intent intent = new Intent(MainActivity.this, LoginPage.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+    }
+
+    // =========================================================
+    // 1. Xử lý chọn item trong Navigation Drawer
+    // =========================================================
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.menu_topic_science) {
+            selectedTopic = "science";
+            Toast.makeText(this, "Chủ đề: Khoa học", Toast.LENGTH_SHORT).show();
+
+        } else if (id == R.id.menu_topic_music) {
+            selectedTopic = "music";
+            Toast.makeText(this, "Chủ đề: Âm nhạc", Toast.LENGTH_SHORT).show();
+
+        } else if (id == R.id.menu_topic_history) {
+            selectedTopic = "history";
+            Toast.makeText(this, "Chủ đề: Lịch sử", Toast.LENGTH_SHORT).show();
+
+        } else if (id == R.id.menu_logout) {
+            // hỗ trợ logout ngay trong drawer
+            authHelper.logout();
+            UserSession.getInstance().clear();
+            startActivity(new Intent(this, LoginPage.class));
             finish();
         }
 
-        // --- Setup Spinner ---
+        // đóng drawer lại
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
+    }
+
+    // =========================================================
+    // 2. Spinner
+    // =========================================================
+    private void setupGameModeSpinner() {
         String[] gameModes = {"Classic", "Sinh tồn"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.spinner_item, gameModes);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                R.layout.spinner_item,
+                gameModes
+        );
         adapter.setDropDownViewResource(R.layout.spinner_dropdown_item);
         spinnerGameMode.setAdapter(adapter);
+
         spinnerGameMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -82,70 +183,18 @@ public class MainActivity extends AppCompatActivity {
                 selectedMode = "Classic";
             }
         });
-
-        // --- Load Question từ Firebase ---
-        loadQuestionsFromFirebase();
-
-        // --- Btn Start ---
-        btnStart.setOnClickListener(v -> {
-            User user = UserSession.getInstance().getUser();
-            if (user != null) {
-                user.resetQuiz(selectedMode); // topic = null
-            }
-            Intent intent = new Intent(MainActivity.this, Quiz_Page.class);
-            intent.putExtra("GAME_MODE", selectedMode);
-            startActivity(intent);
-        });
-        btnLeaderboard.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, Leaderboard.class);
-            startActivity(intent);
-        });
-
-        btnAchievements.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, MatchHistoryActivity.class);
-            startActivity(intent);
-        });
-
-
-        // --- Logout ---
-        imgLogout.setOnClickListener(v -> {
-            authHelper.logout();
-            UserSession.getInstance().clear();
-            Intent intent = new Intent(MainActivity.this, LoginPage.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-            finish();
-        });
     }
 
-    // --- Hàm load Question ---
-    private void loadQuestionsFromFirebase() {
-        DatabaseReference questionsRef = FirebaseDatabase.getInstance().getReference("Questions");
-
-        // Hiển thị spinner và disable nút Play
-        progressLoading.setVisibility(View.VISIBLE);
-        btnStart.setEnabled(false);
-
-        questionsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                QuestionManager.getInstance().clearAll();
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    Question q = ds.getValue(Question.class);
-                    if (q != null) {
-                        QuestionManager.getInstance().addQuestion(q);
-                    }
-                }
-                progressLoading.setVisibility(View.GONE);
-                btnStart.setEnabled(true);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                progressLoading.setVisibility(View.GONE);
-                btnStart.setEnabled(true);
-                Toast.makeText(MainActivity.this, "Load câu hỏi thất bại!", Toast.LENGTH_SHORT).show();
-            }
-        });
+    // =========================================================
+    // 4. Back: nếu drawer đang mở thì đóng trước
+    // =========================================================
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
+            // vẫn để super để quay lại như cũ
+            super.onBackPressed();
+        }
     }
 }

@@ -11,43 +11,47 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Quiz_Page extends AppCompatActivity {
 
+    // UI
     private TextView tvQuestion, tvCorrect, tvWrong, tvScore, tvLevel, tvTime;
     private MaterialButton btnOption1, btnOption2, btnOption3, btnOption4;
     private MaterialButton btnNext, btnFinish;
     private ProgressBar progressBar;
 
+    // Data
     private List<Question> questionList = new ArrayList<>();
     private int questionNumber = 0;
 
     private User currentUser;
     private String gameMode;
 
+    // Timer
     private CountDownTimer timer;
     private long startTime;
-    private final long QUESTION_TIME = 30_000;
+    private final long QUESTION_TIME = 30_000; // 30s
 
+    // Repositories
+    private final QuestionRepository questionRepository = new QuestionRepository();
+    private final MatchHistoryRepository matchHistoryRepository = new MatchHistoryRepository();
+    private final UserRepository userRepository = new UserRepository();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz_page);
 
-        // --- Ánh xạ view ---
+        // 1. Ánh xạ view
         tvQuestion = findViewById(R.id.tv_question);
         tvCorrect = findViewById(R.id.tv_correct);
         tvWrong = findViewById(R.id.tv_wrong);
         tvScore = findViewById(R.id.tv_score);
         tvLevel = findViewById(R.id.tv_level);
         tvTime = findViewById(R.id.tv_time);
-
 
         btnOption1 = findViewById(R.id.btn_option1);
         btnOption2 = findViewById(R.id.btn_option2);
@@ -58,9 +62,10 @@ public class Quiz_Page extends AppCompatActivity {
         btnFinish = findViewById(R.id.btn_finish);
 
         progressBar = findViewById(R.id.progressBar);
+
         startTime = System.currentTimeMillis();
 
-        // --- Lấy dữ liệu từ Intent + Session ---
+        // 2. Lấy dữ liệu từ Intent + Session
         gameMode = getIntent().getStringExtra("GAME_MODE");
 
         currentUser = UserSession.getInstance().getUser();
@@ -70,23 +75,13 @@ public class Quiz_Page extends AppCompatActivity {
             return;
         }
 
-        // --- Reset quiz user ---
+        // 3. Reset quiz cho user (per-game)
         currentUser.resetQuiz(gameMode);
 
-        // --- Lấy danh sách câu hỏi ---
-        questionList = QuestionManager.getInstance()
-                .getRandomQuestions(gameMode, currentUser.getLevel(), null, 10);
+        // 4. Load câu hỏi từ Firebase (qua repository)
+        loadQuestionsFromFirebase();
 
-        if (questionList.isEmpty()) {
-            Toast.makeText(this, "Không có câu hỏi phù hợp", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        // --- Hiển thị câu hỏi đầu tiên ---
-        showQuestion();
-
-        // --- Xử lý click option ---
+        // 5. Gán sự kiện click cho 4 option
         View.OnClickListener optionClickListener = v -> {
             int selectedIndex = 0;
             if (v == btnOption1) selectedIndex = 0;
@@ -102,7 +97,7 @@ public class Quiz_Page extends AppCompatActivity {
         btnOption3.setOnClickListener(optionClickListener);
         btnOption4.setOnClickListener(optionClickListener);
 
-        // --- Next ---
+        // 6. Nút Next
         btnNext.setOnClickListener(v -> {
             if (isLastQuestion()) {
                 finishQuiz();
@@ -112,15 +107,38 @@ public class Quiz_Page extends AppCompatActivity {
             }
         });
 
+        // 7. Nút Finish (nếu người chơi muốn thoát sớm)
+        btnFinish.setOnClickListener(v -> showExitQuizDialog());
+    }
 
+    private void loadQuestionsFromFirebase() {
+        // disable tạm thời các button để user không bấm trong lúc loading
+        setOptionsEnabled(false);
+        btnNext.setEnabled(false);
 
-        // --- Finish ---
-        btnFinish.setOnClickListener(v -> {
-            Toast.makeText(this, "Finish clicked", Toast.LENGTH_SHORT).show();
-            finish();
+        questionRepository.loadAllQuestions(new QuestionLoadCallback() {
+            @Override
+            public void onLoaded() {
+                // Lấy 10 câu ngẫu nhiên đúng với mode + level
+                questionList = QuestionManager.getInstance()
+                        .getRandomQuestions(gameMode, currentUser.getLevel(), null, 10);
+
+                if (questionList.isEmpty()) {
+                    Toast.makeText(Quiz_Page.this, "Không có câu hỏi phù hợp", Toast.LENGTH_SHORT).show();
+                    finish();
+                    return;
+                }
+
+                // Hiển thị câu hỏi đầu tiên
+                showQuestion();
+            }
+
+            @Override
+            public void onFailed(String message) {
+                Toast.makeText(Quiz_Page.this, "Lỗi tải câu hỏi: " + message, Toast.LENGTH_SHORT).show();
+                finish();
+            }
         });
-
-
     }
 
     // --- Hiển thị câu hỏi ---
@@ -137,17 +155,13 @@ public class Quiz_Page extends AppCompatActivity {
         btnOption4.setText(q.getOptions().get(3));
 
         // Enable các button
-        btnOption1.setEnabled(true);
-        btnOption2.setEnabled(true);
-        btnOption3.setEnabled(true);
-        btnOption4.setEnabled(true);
+        setOptionsEnabled(true);
 
         // Update thông tin user
         updateUI();
 
         // Next / Finish button
         btnNext.setEnabled(true);
-        btnFinish.setEnabled(false);
 
         // Update ProgressBar
         updateProgressBar();
@@ -176,10 +190,9 @@ public class Quiz_Page extends AppCompatActivity {
                 } else {
                     // Classic: coi như sai + khóa nút
                     currentUser.addWrongAnswer();
-                    disableOptionButtons();
+                    setOptionsEnabled(false);
                     highlightCorrectAnswer();
                     updateUI();
-
                 }
             }
         }.start();
@@ -194,10 +207,7 @@ public class Quiz_Page extends AppCompatActivity {
         if (timer != null) timer.cancel();
 
         // Disable tất cả button
-        btnOption1.setEnabled(false);
-        btnOption2.setEnabled(false);
-        btnOption3.setEnabled(false);
-        btnOption4.setEnabled(false);
+        setOptionsEnabled(false);
 
         if (selectedIndex == q.getCorrectIndex()) {
             currentUser.addCorrectAnswer(q.getPoints());
@@ -217,8 +227,8 @@ public class Quiz_Page extends AppCompatActivity {
 
         // Update UI
         updateUI();
-
     }
+
     private void updateUI() {
         tvCorrect.setText("Đúng: " + currentUser.getGameCorrect());
         tvWrong.setText("Sai: " + currentUser.getGameWrong());
@@ -232,93 +242,51 @@ public class Quiz_Page extends AppCompatActivity {
         correctButton.setBackgroundTintList(getColorStateList(R.color.green_700));
     }
 
-
-    // --- Helper: Lấy button theo index ---
-    private MaterialButton getOptionButton(int index) {
-        switch (index) {
-            case 0: return btnOption1;
-            case 1: return btnOption2;
-            case 2: return btnOption3;
-            case 3: return btnOption4;
-            default: return null;
-        }
-    }
-
-    private void resetOptionButtons() {
-        btnOption1.setEnabled(true);
-        btnOption2.setEnabled(true);
-        btnOption3.setEnabled(true);
-        btnOption4.setEnabled(true);
-
-        btnOption1.setBackgroundTintList(getColorStateList(R.color.orange_500));
-        btnOption2.setBackgroundTintList(getColorStateList(R.color.orange_500));
-        btnOption3.setBackgroundTintList(getColorStateList(R.color.orange_500));
-        btnOption4.setBackgroundTintList(getColorStateList(R.color.orange_500));
-    }
-
-
-
     // --- Kết thúc quiz ---
     private void finishQuiz() {
-        // Lưu user vào Firebase
-        DatabaseReference userRef = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(currentUser.getUid());
-        userRef.setValue(currentUser);
+        // 1. Lưu user (điểm tích lũy, level...) lên Firebase
+        userRepository.saveUser(currentUser, new UserRepository.SaveCallback() {
+            @Override
+            public void onSuccess() {
+                // Cập nhật thành công, có thể log hoặc hiển thị
+            }
 
-        // 👉 Gọi hàm lưu lịch sử trận đấu
-        saveMatchHistory();
+            @Override
+            public void onError(String error) {
+                Toast.makeText(Quiz_Page.this, "Lỗi lưu user: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
 
+        // 2. Lưu lịch sử trận đấu qua repository
+        saveMatchHistoryToRepo();
+
+        // 3. Tính thời gian chơi để gửi sang Result
         long endTime = System.currentTimeMillis();
         int totalTimePlayed = (int) ((endTime - startTime) / 1000);
 
         Toast.makeText(this, "Quiz kết thúc! Điểm: " + currentUser.getScore(), Toast.LENGTH_LONG).show();
 
+        // 4. Chuyển sang màn hình kết quả
         Intent intent = new Intent(Quiz_Page.this, ResultPage.class);
         intent.putExtra("score",     currentUser.getGameScore());
         intent.putExtra("correct",   currentUser.getGameCorrect());
         intent.putExtra("wrong",     currentUser.getGameWrong());
         intent.putExtra("totalTime", totalTimePlayed);
         intent.putExtra("myRank",    currentUser.getRank());
+        intent.putExtra("totalQuestions", currentUser.getGameTotalQuestions());
         startActivity(intent);
         finish();
-
     }
 
-
-    private void endSurvivalMode() {
-        // Không update điểm vào Firebase, chỉ kết thúc
-        Intent intent = new Intent(Quiz_Page.this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish(); // kết thúc Quiz_Page
-    }
-
-
-    private void updateProgressBar() {
-        int total = questionList.size();
-        int current = questionNumber + 1;
-        progressBar.setMax(total);
-        progressBar.setProgress(current);
-    }
-
-
-    private void saveMatchHistory() {
-        DatabaseReference historyRef = FirebaseDatabase.getInstance().getReference("match_history");
-
-        String matchId = historyRef.push().getKey();
-        if (matchId == null) return;
-
+    private void saveMatchHistoryToRepo() {
         long endTime = System.currentTimeMillis();
         long timeTakenSeconds = (endTime - startTime) / 1000;
 
-        // topic an toàn null
         String topic = (questionList.isEmpty() || questionList.get(0).getTopic() == null)
                 ? "unknown" : questionList.get(0).getTopic();
 
-
         MatchHistory history = new MatchHistory(
-                matchId,
+                null,                               // matchId: để repo set
                 currentUser.getUid(),
                 currentUser.getFullName(),
                 topic,
@@ -334,11 +302,60 @@ public class Quiz_Page extends AppCompatActivity {
                 (int) timeTakenSeconds
         );
 
-        historyRef.child(matchId).setValue(history)
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(this, "Đã lưu lịch sử trận đấu!", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Lỗi lưu lịch sử: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+        matchHistoryRepository.saveMatchHistory(history, new MatchHistoryRepository.SaveCallback() {
+            @Override
+            public void onSuccess() {
+                 Toast.makeText(Quiz_Page.this, "Đã lưu lịch sử trận đấu!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String error) {
+                Toast.makeText(Quiz_Page.this, "Lỗi lưu lịch sử: " + error, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void endSurvivalMode() {
+        Intent intent = new Intent(Quiz_Page.this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void updateProgressBar() {
+        int total = questionList.size();
+        int current = questionNumber + 1;
+        progressBar.setMax(total);
+        progressBar.setProgress(current);
+    }
+
+    private void resetOptionButtons() {
+        setOptionsEnabled(true);
+        btnOption1.setBackgroundTintList(getColorStateList(R.color.orange_500));
+        btnOption2.setBackgroundTintList(getColorStateList(R.color.orange_500));
+        btnOption3.setBackgroundTintList(getColorStateList(R.color.orange_500));
+        btnOption4.setBackgroundTintList(getColorStateList(R.color.orange_500));
+    }
+
+    private void setOptionsEnabled(boolean enabled) {
+        btnOption1.setEnabled(enabled);
+        btnOption2.setEnabled(enabled);
+        btnOption3.setEnabled(enabled);
+        btnOption4.setEnabled(enabled);
+    }
+
+    private MaterialButton getOptionButton(int index) {
+        switch (index) {
+            case 0: return btnOption1;
+            case 1: return btnOption2;
+            case 2: return btnOption3;
+            case 3: return btnOption4;
+            default: return null;
+        }
+    }
+
+    private boolean isLastQuestion() {
+        return questionNumber == questionList.size() - 1;
     }
 
     @Override
@@ -347,16 +364,33 @@ public class Quiz_Page extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void disableOptionButtons() {
-        btnOption1.setEnabled(false);
-        btnOption2.setEnabled(false);
-        btnOption3.setEnabled(false);
-        btnOption4.setEnabled(false);
-    }
+    private void showExitQuizDialog() {
+        android.app.AlertDialog dialog;
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        View view = getLayoutInflater().inflate(R.layout.dialog_confirm_exit, null);
+        builder.setView(view);
+        dialog = builder.create();
 
-    private boolean isLastQuestion() {
-        return questionNumber == questionList.size() - 1;
-    }
+        // Nếu muốn nền trong suốt bo góc đẹp
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
 
+        View btnCancel = view.findViewById(R.id.btnCancel);
+        View btnOk = view.findViewById(R.id.btnOk);
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        btnOk.setOnClickListener(v -> {
+            if (timer != null) timer.cancel();
+            Intent intent = new Intent(Quiz_Page.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+            dialog.dismiss();
+        });
+
+        dialog.show();
+    }
 
 }

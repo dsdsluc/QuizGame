@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="140dp"
+    android:gravity="bottom"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@drawable/card_bg">
+
+    <TextView
+        android:id="@+id/tvNavTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chủ đề Quiz"
+        android:textSize="18sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tvNavSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chọn chủ đề để nhận bagde"
+        android:textSize="14sp"/>
+</LinearLayout>

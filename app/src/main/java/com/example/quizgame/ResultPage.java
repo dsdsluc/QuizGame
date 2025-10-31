@@ -12,57 +12,50 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.Arrays;
-
 
 import nl.dionsegijn.konfetti.core.Angle;
 import nl.dionsegijn.konfetti.core.Party;
+import nl.dionsegijn.konfetti.core.PartyFactory;
 import nl.dionsegijn.konfetti.core.Position;
 import nl.dionsegijn.konfetti.core.emitter.Emitter;
 import nl.dionsegijn.konfetti.core.emitter.EmitterConfig;
 import nl.dionsegijn.konfetti.xml.KonfettiView;
-import nl.dionsegijn.konfetti.core.PartyFactory;
-
 
 public class ResultPage extends AppCompatActivity {
 
     private LinearLayout leaderboardContainer;
-    private DatabaseReference usersRef;
     private KonfettiView konfettiView;
+
+    // dùng repo thay vì gọi Firebase trực tiếp
+    private final UserRepository userRepository = new UserRepository();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_result_page);
 
-        // Nhận dữ liệu từ QuizPage
-        int score = getIntent().getIntExtra("score", 0);
-        int correct = getIntent().getIntExtra("correct", 0);
-        int wrong = getIntent().getIntExtra("wrong", 0);
-        int timeTaken = getIntent().getIntExtra("totalTime", 0);
+        // 1. Nhận dữ liệu từ QuizPage
+        int score        = getIntent().getIntExtra("score", 0);
+        int correct      = getIntent().getIntExtra("correct", 0);
+        int wrong        = getIntent().getIntExtra("wrong", 0);
+        int timeTaken    = getIntent().getIntExtra("totalTime", 0);
+        int totalQs      = getIntent().getIntExtra("totalQuestions", -1);
 
-        Button btnHome = findViewById(R.id.btnHome);
-        Button btnExit = findViewById(R.id.btnExit);
-        // Ánh xạ view
-        TextView txtScore = findViewById(R.id.textScore);
-        TextView txtOutOf = findViewById(R.id.textOutOf);
-        TextView txtPoints = findViewById(R.id.textPoints);
-        TextView txtTime = findViewById(R.id.textTime);
+        // 2. Ánh xạ view
+        Button btnHome   = findViewById(R.id.btnHome);
+        Button btnExit   = findViewById(R.id.btnExit);
+        TextView txtScore   = findViewById(R.id.textScore);
+        TextView txtOutOf   = findViewById(R.id.textOutOf);
+        TextView txtPoints  = findViewById(R.id.textPoints);
+        TextView txtTime    = findViewById(R.id.textTime);
         leaderboardContainer = findViewById(R.id.leaderboardContainer);
-        konfettiView = findViewById(R.id.konfettiView);
+        konfettiView         = findViewById(R.id.konfettiView);
 
-        // Firebase reference
-        usersRef = FirebaseDatabase.getInstance().getReference("users");
-
-        // Animation điểm số
+        // 3. Animation điểm số
         ValueAnimator scoreAnim = ValueAnimator.ofInt(0, score);
         scoreAnim.setDuration(1000);
         scoreAnim.setInterpolator(new AccelerateDecelerateInterpolator());
@@ -70,12 +63,17 @@ public class ResultPage extends AppCompatActivity {
                 txtScore.setText(String.valueOf(animation.getAnimatedValue())));
         scoreAnim.start();
 
-        // Set dữ liệu văn bản
-        txtOutOf.setText("Out of " + (correct + wrong));
+        // 4. Set dữ liệu văn bản
+        if (totalQs != -1) {
+            txtOutOf.setText("Out of " + totalQs);
+        } else {
+            txtOutOf.setText("Out of " + (correct + wrong));
+        }
+
         txtPoints.setText(score + " Points");
         txtTime.setText("You took " + formatTime(timeTaken) + " to complete the quiz");
 
-        // Nút Trang chủ -> mở MainActivity
+        // 5. Nút Trang chủ
         btnHome.setOnClickListener(v -> {
             Intent intent = new Intent(ResultPage.this, MainActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -83,15 +81,13 @@ public class ResultPage extends AppCompatActivity {
             finish();
         });
 
-// Nút Thoát -> thoát app
-        btnExit.setOnClickListener(v -> {
-            finishAffinity(); // Đóng toàn bộ activity và thoát app
-        });
+        // 6. Nút Thoát → show dialog đẹp
+        btnExit.setOnClickListener(v -> showExitDialog());
 
-        // Hiển thị leaderboard
+        // 7. Hiển thị leaderboard “láng giềng”
         showLeaderboardNeighbors();
 
-        // Chạy confetti khi hoàn thành quiz
+        // 8. Confetti
         startConfetti();
     }
 
@@ -99,52 +95,31 @@ public class ResultPage extends AppCompatActivity {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) return;
         String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        usersRef.get().addOnSuccessListener(snapshot -> {
-            List<User> allUsers = new ArrayList<>();
+        userRepository.getNeighbors(currentUid, new UserRepository.NeighborCallback() {
+            @Override
+            public void onSuccess(List<User> neighbors) {
+                leaderboardContainer.removeAllViews();
+                for (User u : neighbors) {
+                    if (u == null) continue;
+                    View itemView = getLayoutInflater().inflate(
+                            R.layout.item_leaderboard,
+                            leaderboardContainer,
+                            false
+                    );
 
-            for (DataSnapshot userSnap : snapshot.getChildren()) {
-                User user = userSnap.getValue(User.class);
-                if (user != null) {
-                    allUsers.add(user);
+                    TextView txtName   = itemView.findViewById(R.id.textName);
+                    TextView txtPoints = itemView.findViewById(R.id.textPoints);
+
+                    txtName.setText("#" + u.getRank() + " " + u.getFullName());
+                    txtPoints.setText(u.getScore() + " pts");
+
+                    leaderboardContainer.addView(itemView);
                 }
             }
 
-            // Sắp xếp theo score giảm dần
-            Collections.sort(allUsers, (u1, u2) -> Integer.compare(u2.getScore(), u1.getScore()));
-
-            // Gán rank
-            for (int i = 0; i < allUsers.size(); i++) {
-                allUsers.get(i).setRank(i + 1);
-            }
-
-            // Tìm vị trí người chơi hiện tại
-            int myIndex = -1;
-            for (int i = 0; i < allUsers.size(); i++) {
-                if (allUsers.get(i).getUid().equals(currentUid)) {
-                    myIndex = i;
-                    break;
-                }
-            }
-
-            // Lấy hàng xóm
-            List<User> neighbors = new ArrayList<>();
-            if (myIndex != -1) {
-                if (myIndex - 1 >= 0) neighbors.add(allUsers.get(myIndex - 1));
-                neighbors.add(allUsers.get(myIndex));
-                if (myIndex + 1 < allUsers.size()) neighbors.add(allUsers.get(myIndex + 1));
-            }
-
-            // Render ra UI
-            leaderboardContainer.removeAllViews();
-            for (User u : neighbors) {
-                View itemView = getLayoutInflater().inflate(R.layout.item_leaderboard, leaderboardContainer, false);
-                TextView txtName = itemView.findViewById(R.id.textName);
-                TextView txtPoints = itemView.findViewById(R.id.textPoints);
-
-                txtName.setText("#" + u.getRank() + " " + u.getFullName());
-                txtPoints.setText(u.getScore() + " pts");
-
-                leaderboardContainer.addView(itemView);
+            @Override
+            public void onError(String error) {
+                // bạn muốn thì Toast ở đây cũng được
             }
         });
     }
@@ -153,20 +128,35 @@ public class ResultPage extends AppCompatActivity {
         EmitterConfig emitterConfig = new Emitter(2, TimeUnit.SECONDS).perSecond(100);
 
         Party party = new PartyFactory(emitterConfig)
-                .spread(360) // tỏa tròn
-                .angle(Angle.TOP) // bắn từ trên xuống
-                .position(new Position.Relative(0.5, 0.3)) // vị trí giữa màn hình
-                .colors(Arrays.asList(0xFFFCE18A, 0xFFFF726D, 0xFFF4306D, 0xFFB48DEF))
+                .spread(360)
+                .angle(Angle.TOP)
+                .position(new Position.Relative(0.5, 0.3))
+                .colors(Arrays.asList(
+                        0xFFFCE18A,
+                        0xFFFF726D,
+                        0xFFF4306D,
+                        0xFFB48DEF
+                ))
                 .build();
 
         konfettiView.start(party);
     }
 
-
-
     private String formatTime(int seconds) {
         int minutes = seconds / 60;
         int secs = seconds % 60;
         return minutes + " min " + secs + " sec";
+    }
+
+    private void showExitDialog() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Thoát game?")
+                .setMessage("Bạn có muốn thoát game không?")
+                .setPositiveButton("Thoát", (dialog, which) -> {
+
+                    finishAffinity();
+                })
+                .setNegativeButton("Ở lại", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 }

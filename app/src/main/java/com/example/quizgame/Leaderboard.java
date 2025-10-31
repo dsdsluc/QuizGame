@@ -5,19 +5,12 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,9 +20,10 @@ public class Leaderboard extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private LeaderboardAdapter adapter;
-    private List<User> userList;
+    private List<User> userList = new ArrayList<>();
 
-    private DatabaseReference usersRef;
+    // dùng repo để tách Firebase
+    private UserRepository userRepository = new UserRepository();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +31,6 @@ public class Leaderboard extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_leaderboard);
 
-        // Áp dụng padding edge-to-edge
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -47,25 +40,30 @@ public class Leaderboard extends AppCompatActivity {
         recyclerView = findViewById(R.id.leaderboardRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        userList = new ArrayList<>();
         adapter = new LeaderboardAdapter(this, userList);
         recyclerView.setAdapter(adapter);
 
-        usersRef = FirebaseDatabase.getInstance().getReference("users");
+        // ⬇️ load từ repo chứ không gọi Firebase trực tiếp nữa
+        loadLeaderboard();
 
-        // Lấy dữ liệu user realtime từ Firebase
-        usersRef.addValueEventListener(new ValueEventListener() {
+        Button btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
+
+        Button btnStatistics = findViewById(R.id.btnStatistics);
+        btnStatistics.setOnClickListener(v ->
+                Toast.makeText(this,
+                        "Chức năng thống kê sẽ được phát triển sau",
+                        Toast.LENGTH_SHORT).show());
+    }
+
+    private void loadLeaderboard() {
+        userRepository.getAllUsers(new UserRepository.UserListCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            public void onSuccess(List<User> users) {
                 userList.clear();
-                for (DataSnapshot userSnap : snapshot.getChildren()) {
-                    User user = userSnap.getValue(User.class);
-                    if (user != null) {
-                        userList.add(user);
-                    }
-                }
+                userList.addAll(users);
 
-                // Sắp xếp user theo điểm (score) giảm dần
+                // sort theo score
                 Collections.sort(userList, (u1, u2) ->
                         Integer.compare(
                                 u2 != null ? u2.getScore() : 0,
@@ -73,7 +71,7 @@ public class Leaderboard extends AppCompatActivity {
                         )
                 );
 
-                // Gán rank theo vị trí
+                // gán rank
                 for (int i = 0; i < userList.size(); i++) {
                     userList.get(i).setRank(i + 1);
                 }
@@ -82,22 +80,11 @@ public class Leaderboard extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+            public void onError(String error) {
                 Toast.makeText(Leaderboard.this,
-                        "Lấy dữ liệu thất bại: " + error.getMessage(),
+                        "Lấy dữ liệu thất bại: " + error,
                         Toast.LENGTH_SHORT).show();
             }
         });
-
-        // Nút thoát
-        Button btnBack = findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> finish());
-
-        // Nút thống kê (tạm thời hiển thị thông báo)
-        Button btnStatistics = findViewById(R.id.btnStatistics);
-        btnStatistics.setOnClickListener(v ->
-                Toast.makeText(this,
-                        "Chức năng thống kê sẽ được phát triển sau",
-                        Toast.LENGTH_SHORT).show());
     }
 }

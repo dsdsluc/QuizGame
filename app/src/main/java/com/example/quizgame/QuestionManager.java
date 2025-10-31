@@ -42,13 +42,6 @@ public class QuestionManager {
                 .collect(Collectors.toList());
     }
 
-    // Lấy 1 câu hỏi ngẫu nhiên
-    public Question getRandomQuestion(String gameMode, int level, String topic) {
-        List<Question> filtered = getQuestions(gameMode, level, topic);
-        if (filtered.isEmpty()) return null;
-        Collections.shuffle(filtered);
-        return filtered.get(0);
-    }
 
     // Lấy N câu hỏi ngẫu nhiên
     public List<Question> getRandomQuestions(String gameMode, int level, String topic, int count) {
