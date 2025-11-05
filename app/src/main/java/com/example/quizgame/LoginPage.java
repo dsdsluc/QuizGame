@@ -11,14 +11,16 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseUser;
 
 public class LoginPage extends AppCompatActivity {
 
     private EditText inputEmail, inputPassword;
-    private MaterialButton btnLogin, btnGoogleLogin;
+    private MaterialButton btnLogin;
     private ProgressBar progressBarLogin;
-    private TextView tvForgotPassword, tvRegister;
+    private TextView tvForgotPassword;
+    private FloatingActionButton tvRegister;
 
     private AuthHelper authHelper;
 
@@ -31,7 +33,6 @@ public class LoginPage extends AppCompatActivity {
         inputEmail = findViewById(R.id.inputEmail);
         inputPassword = findViewById(R.id.inputPassword);
         btnLogin = findViewById(R.id.btnLogin);
-        btnGoogleLogin = findViewById(R.id.btnGoogleLogin);
         progressBarLogin = findViewById(R.id.progressBarLogin);
         tvForgotPassword = findViewById(R.id.tvForgotPassword);
         tvRegister = findViewById(R.id.tvRegister);
@@ -67,10 +68,6 @@ public class LoginPage extends AppCompatActivity {
             });
         });
 
-        // Đăng nhập bằng Google (chưa implement)
-        btnGoogleLogin.setOnClickListener(v -> {
-            Toast.makeText(this, "Google Login chưa được triển khai", Toast.LENGTH_SHORT).show();
-        });
 
         // Quên mật khẩu
         tvForgotPassword.setOnClickListener(v -> {
@@ -120,6 +117,6 @@ public class LoginPage extends AppCompatActivity {
     private void setLoading(boolean isLoading) {
         progressBarLogin.setVisibility(isLoading ? View.VISIBLE : View.GONE);
         btnLogin.setEnabled(!isLoading);
-        btnGoogleLogin.setEnabled(!isLoading);
+
     }
 }

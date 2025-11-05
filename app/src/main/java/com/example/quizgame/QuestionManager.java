@@ -35,10 +35,17 @@ public class QuestionManager {
 
     // Lấy danh sách câu hỏi theo level, gameMode, topic
     public List<Question> getQuestions(String gameMode, int level, String topic) {
+
+        final String lowerCaseTopic = (topic != null) ? topic.toLowerCase() : null;
+
         return allQuestions.stream()
-                .filter(q -> q.getGameMode().equals(gameMode))
+                .filter(q -> q.getGameMode().equalsIgnoreCase(gameMode))
                 .filter(q -> q.getLevel() <= level)
-                .filter(q -> topic == null || q.getTopic().equals(topic))
+                .filter(q -> {
+                    if (lowerCaseTopic == null) return true;
+                    if (q.getTopic() == null) return false;
+                    return q.getTopic().toLowerCase().equals(lowerCaseTopic);
+                })
                 .collect(Collectors.toList());
     }
 
@@ -56,8 +63,4 @@ public class QuestionManager {
         allQuestions.clear();
     }
 
-    // Lấy tổng số câu hỏi đã load
-    public int getTotalQuestions() {
-        return allQuestions.size();
-    }
 }

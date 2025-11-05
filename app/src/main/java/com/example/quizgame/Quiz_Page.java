@@ -39,6 +39,7 @@ public class Quiz_Page extends AppCompatActivity {
     private final QuestionRepository questionRepository = new QuestionRepository();
     private final MatchHistoryRepository matchHistoryRepository = new MatchHistoryRepository();
     private final UserRepository userRepository = new UserRepository();
+    private String topic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +68,8 @@ public class Quiz_Page extends AppCompatActivity {
 
         // 2. Lấy dữ liệu từ Intent + Session
         gameMode = getIntent().getStringExtra("GAME_MODE");
+        topic = getIntent().getStringExtra("TOPIC");
+        if (topic != null) topic = topic.trim();
 
         currentUser = UserSession.getInstance().getUser();
         if (currentUser == null) {
@@ -112,16 +115,16 @@ public class Quiz_Page extends AppCompatActivity {
     }
 
     private void loadQuestionsFromFirebase() {
-        // disable tạm thời các button để user không bấm trong lúc loading
+        // 1. Tạm thời vô hiệu hóa các nút trong khi đang tải
         setOptionsEnabled(false);
         btnNext.setEnabled(false);
 
-        questionRepository.loadAllQuestions(new QuestionLoadCallback() {
+        // 2. Định nghĩa Callback chung để xử lý kết quả tải
+        QuestionLoadCallback commonCallback = new QuestionLoadCallback() {
             @Override
             public void onLoaded() {
-                // Lấy 10 câu ngẫu nhiên đúng với mode + level
                 questionList = QuestionManager.getInstance()
-                        .getRandomQuestions(gameMode, currentUser.getLevel(), null, 10);
+                        .getRandomQuestions(gameMode, currentUser.getLevel(), topic, 10);
 
                 if (questionList.isEmpty()) {
                     Toast.makeText(Quiz_Page.this, "Không có câu hỏi phù hợp", Toast.LENGTH_SHORT).show();
@@ -129,7 +132,6 @@ public class Quiz_Page extends AppCompatActivity {
                     return;
                 }
 
-                // Hiển thị câu hỏi đầu tiên
                 showQuestion();
             }
 
@@ -138,7 +140,15 @@ public class Quiz_Page extends AppCompatActivity {
                 Toast.makeText(Quiz_Page.this, "Lỗi tải câu hỏi: " + message, Toast.LENGTH_SHORT).show();
                 finish();
             }
-        });
+        };
+
+        if (topic == null || topic.isEmpty() || topic.equalsIgnoreCase("random")) {
+            // Chơi ngẫu nhiên
+            questionRepository.loadAllQuestions(commonCallback);
+        } else {
+            // Chơi theo chủ đề
+            questionRepository.loadQuestionsByTopic(topic, commonCallback);
+        }
     }
 
     // --- Hiển thị câu hỏi ---
@@ -210,7 +220,11 @@ public class Quiz_Page extends AppCompatActivity {
         setOptionsEnabled(false);
 
         if (selectedIndex == q.getCorrectIndex()) {
+
             currentUser.addCorrectAnswer(q.getPoints());
+            if (topic != null && !topic.isEmpty() && !"random".equalsIgnoreCase(topic)) {
+                currentUser.addTopicScore(q.getPoints());
+            }
             selectedButton.setBackgroundTintList(getColorStateList(R.color.green_700));
         } else {
             currentUser.addWrongAnswer();
@@ -286,7 +300,7 @@ public class Quiz_Page extends AppCompatActivity {
                 ? "unknown" : questionList.get(0).getTopic();
 
         MatchHistory history = new MatchHistory(
-                null,                               // matchId: để repo set
+                null,
                 currentUser.getUid(),
                 currentUser.getFullName(),
                 topic,

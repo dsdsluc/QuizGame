@@ -121,4 +121,15 @@ public class UserRepository {
                     if (callback != null) callback.onError(e.getMessage());
                 });
     }
+
+    public void updateUser(User user, UpdateCallback callback) {
+        usersRef.child(user.getUid()).setValue(user)
+                .addOnSuccessListener(unused -> callback.onSuccess())
+                .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    public interface UpdateCallback {
+        void onSuccess();
+        void onFailure(String error);
+    }
 }

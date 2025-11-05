@@ -35,6 +35,8 @@ public class MainActivity extends AppCompatActivity
     private Spinner spinnerGameMode;
     private ProgressBar progressLoading;
 
+
+
     private AuthHelper authHelper;
 
     // giá trị chọn
@@ -65,6 +67,7 @@ public class MainActivity extends AppCompatActivity
         tvRank          = findViewById(R.id.tvRank);
         spinnerGameMode = findViewById(R.id.spinnerGameMode);
         progressLoading = findViewById(R.id.progressLoading);
+        ImageView imgUser = findViewById(R.id.imgProfile);
 
         authHelper = new AuthHelper();
 
@@ -76,7 +79,7 @@ public class MainActivity extends AppCompatActivity
             tvLevel.setText("Level: " + currentUser.getLevel());
             tvRank.setText("Hạng: " + currentUser.getRank());
         } else {
-            // chưa login → đá về login
+
             startActivity(new Intent(this, LoginPage.class));
             finish();
             return;
@@ -90,6 +93,11 @@ public class MainActivity extends AppCompatActivity
         // 5. Spinner chọn mode
         setupGameModeSpinner();
 
+        imgUser.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
+
 
         // 7. Nút Start
         btnStart.setOnClickListener(v -> {
@@ -101,7 +109,7 @@ public class MainActivity extends AppCompatActivity
             Intent intent = new Intent(MainActivity.this, Quiz_Page.class);
             intent.putExtra("GAME_MODE", selectedMode);
             if (selectedTopic != null) {
-                intent.putExtra("TOPIC", selectedTopic);
+                intent.putExtra("TOPIC", selectedTopic.trim());
             }
             startActivity(intent);
         });
@@ -134,24 +142,79 @@ public class MainActivity extends AppCompatActivity
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.menu_topic_science) {
-            selectedTopic = "science";
-            Toast.makeText(this, "Chủ đề: Khoa học", Toast.LENGTH_SHORT).show();
+        // Reset selectedTopic về null trước
+        selectedTopic = null;
+        String topicName = null;
 
-        } else if (id == R.id.menu_topic_music) {
-            selectedTopic = "music";
-            Toast.makeText(this, "Chủ đề: Âm nhạc", Toast.LENGTH_SHORT).show();
+        // --- Xử lý các Chủ đề đã có trong Firebase (Đảm bảo Khớp Tuyệt Đối) ---
+
+        if (id == R.id.menu_topic_default) {
+            selectedTopic = null;
+            topicName = "Chơi ngẫu nhiên";
+
+        } else if (id == R.id.menu_topic_science) {
+            selectedTopic = "Khoa học"; // Giá trị khớp với Firebase
+            topicName = "Khoa học";
 
         } else if (id == R.id.menu_topic_history) {
-            selectedTopic = "history";
-            Toast.makeText(this, "Chủ đề: Lịch sử", Toast.LENGTH_SHORT).show();
+            selectedTopic = "Lịch sử";   // Giá trị khớp với Firebase
+            topicName = "Lịch sử";
 
+        } else if (id == R.id.menu_topic_geography) {
+            selectedTopic = "Địa lý";    // Giá trị khớp với Firebase
+            topicName = "Địa lý";
+
+        } else if (id == R.id.menu_topic_technology) {
+            selectedTopic = "Công nghệ"; // Giá trị khớp với Firebase
+            topicName = "Công nghệ";
+
+        } else if (id == R.id.menu_topic_math) {
+            selectedTopic = "Toán học";  // Giá trị khớp với Firebase
+            topicName = "Toán học";
+
+        } else if (id == R.id.menu_topic_physics) {
+            selectedTopic = "Vật lý";    // Giá trị khớp với Firebase
+            topicName = "Vật lý";
+
+        } else if (id == R.id.menu_topic_chemistry) {
+            selectedTopic = "Hóa học";   // Giá trị khớp với Firebase
+            topicName = "Hóa học";
+
+        } else if (id == R.id.menu_topic_literature) {
+            selectedTopic = "Văn học";   // Giá trị khớp với Firebase
+            topicName = "Văn học";
+
+            // --- Xử lý các Chủ đề mới thêm/ít câu hỏi ---
+
+        } else if (id == R.id.menu_topic_music) {
+            selectedTopic = "Âm nhạc";   // Tên mới, cần thêm dữ liệu
+            topicName = "Âm nhạc";
+
+        } else if (id == R.id.menu_topic_arts) {
+            selectedTopic = "Nghệ thuật"; // Giá trị khớp với Firebase
+            topicName = "Nghệ thuật";
+
+        } else if (id == R.id.menu_topic_entertainment) {
+            selectedTopic = "Giải trí"; // Giá trị khớp với Firebase
+            topicName = "Giải trí";
+
+        } else if (id == R.id.menu_topic_sports) {
+            selectedTopic = "Thể thao";  // Tên mới, cần thêm dữ liệu
+            topicName = "Thể thao";
+
+            // --- Xử lý Logout ---
         } else if (id == R.id.menu_logout) {
-            // hỗ trợ logout ngay trong drawer
             authHelper.logout();
             UserSession.getInstance().clear();
-            startActivity(new Intent(this, LoginPage.class));
+            Intent intent = new Intent(this, LoginPage.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
             finish();
+        }
+
+        // 4. Hiển thị thông báo (nếu không phải logout)
+        if (topicName != null) {
+            Toast.makeText(this, "Đã chọn chủ đề: " + topicName, Toast.LENGTH_SHORT).show();
         }
 
         // đóng drawer lại
