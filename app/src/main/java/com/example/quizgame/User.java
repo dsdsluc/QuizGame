@@ -3,6 +3,9 @@ package com.example.quizgame;
 public class User {
     private String uid;
     private String fullName;
+
+    private String gender;
+    private String birthday;
     private String email;
 
     // ===== Lifetime (tích lũy) =====
@@ -30,6 +33,14 @@ public class User {
     public User() {
         // đảm bảo per-game = 0 khi Firebase khởi tạo
         resetGameOnly();
+    }
+
+    public User(String uid, String fullName, String gender, String birthday, String email) {
+        this.uid = uid;
+        this.fullName = fullName;
+        this.gender = gender;
+        this.birthday = birthday;
+        this.email = email;
     }
 
     // GIỮ NGUYÊN constructor bạn đang dùng ở nhiều nơi (KHÔNG đổi chữ ký)
@@ -61,6 +72,14 @@ public class User {
     public int getScore() { return score; }
     public int getLevel() { return level; }
     public int getRank() { return rank; }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
     public int getCorrect() { return correct; }
     public int getWrong() { return wrong; }
     public int getTotalQuestions() { return totalQuestions; }
@@ -74,6 +93,13 @@ public class User {
     public void setScore(int score) { this.score = score; }
     public void setLevel(int level) { this.level = level; }
     public void setRank(int rank) { this.rank = rank; }
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public void setBirthday(String birthday) {
+        this.birthday = birthday;
+    }
     public void setCorrect(int correct) { this.correct = correct; }
     public void setWrong(int wrong) { this.wrong = wrong; }
     public void setTotalQuestions(int totalQuestions) { this.totalQuestions = totalQuestions; }

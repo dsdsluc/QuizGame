@@ -30,4 +30,6 @@
     <color name="orange_400">#FFB74D</color>
 
     <color name="gradient_background">#FFA726</color>
+    <color name="blue_primary">#2196F3</color>
+
 </resources>

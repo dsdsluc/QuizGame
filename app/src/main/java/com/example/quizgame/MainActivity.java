@@ -35,6 +35,8 @@ public class MainActivity extends AppCompatActivity
     private Spinner spinnerGameMode;
     private ProgressBar progressLoading;
 
+
+
     private AuthHelper authHelper;
 
     // giá trị chọn
@@ -65,6 +67,7 @@ public class MainActivity extends AppCompatActivity
         tvRank          = findViewById(R.id.tvRank);
         spinnerGameMode = findViewById(R.id.spinnerGameMode);
         progressLoading = findViewById(R.id.progressLoading);
+        ImageView imgUser = findViewById(R.id.imgProfile);
 
         authHelper = new AuthHelper();
 
@@ -76,7 +79,7 @@ public class MainActivity extends AppCompatActivity
             tvLevel.setText("Level: " + currentUser.getLevel());
             tvRank.setText("Hạng: " + currentUser.getRank());
         } else {
-            // chưa login → đá về login
+
             startActivity(new Intent(this, LoginPage.class));
             finish();
             return;
@@ -89,6 +92,11 @@ public class MainActivity extends AppCompatActivity
 
         // 5. Spinner chọn mode
         setupGameModeSpinner();
+
+        imgUser.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
 
 
         // 7. Nút Start
