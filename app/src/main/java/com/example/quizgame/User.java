@@ -3,9 +3,6 @@ package com.example.quizgame;
 public class User {
     private String uid;
     private String fullName;
-
-    private String gender;
-    private String birthday;
     private String email;
 
     // ===== Lifetime (tích lũy) =====
@@ -17,8 +14,6 @@ public class User {
     private int totalQuestions; // Tổng số câu (tích lũy)
     private int currentStreak;  // Streak hiện tại (tích lũy)
     private int maxStreak;      // Streak dài nhất (tích lũy)
-
-    private int topicScore;
 
     // ===== Thông tin chế độ chơi =====
     private String gameMode;    // Classic / Survival / TimeAttack
@@ -37,14 +32,6 @@ public class User {
         resetGameOnly();
     }
 
-    public User(String uid, String fullName, String gender, String birthday, String email) {
-        this.uid = uid;
-        this.fullName = fullName;
-        this.gender = gender;
-        this.birthday = birthday;
-        this.email = email;
-    }
-
     // GIỮ NGUYÊN constructor bạn đang dùng ở nhiều nơi (KHÔNG đổi chữ ký)
     public User(String uid, String fullName, String email,
                 int score, int level, int rank,
@@ -58,7 +45,6 @@ public class User {
         this.rank = rank;
         this.correct = correct;
         this.wrong = wrong;
-
         this.totalQuestions = totalQuestions;
         this.currentStreak = currentStreak;
         this.maxStreak = maxStreak;
@@ -75,14 +61,6 @@ public class User {
     public int getScore() { return score; }
     public int getLevel() { return level; }
     public int getRank() { return rank; }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public String getBirthday() {
-        return birthday;
-    }
     public int getCorrect() { return correct; }
     public int getWrong() { return wrong; }
     public int getTotalQuestions() { return totalQuestions; }
@@ -96,15 +74,6 @@ public class User {
     public void setScore(int score) { this.score = score; }
     public void setLevel(int level) { this.level = level; }
     public void setRank(int rank) { this.rank = rank; }
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public void setBirthday(String birthday) {
-        this.birthday = birthday;
-    }
-    public int getTopicScore() { return topicScore; }
-    public void setTopicScore(int topicScore) { this.topicScore = topicScore; }
     public void setCorrect(int correct) { this.correct = correct; }
     public void setWrong(int wrong) { this.wrong = wrong; }
     public void setTotalQuestions(int totalQuestions) { this.totalQuestions = totalQuestions; }
@@ -175,22 +144,6 @@ public class User {
         this.gameStreak = 0;
         this.gameMaxStreak = 0;
     }
-    // ===== Rank Up theo TopicScore =====
-    public void addTopicScore(int points) {
-        this.topicScore += points;
-        checkRankUp();
-    }
-
-    private void checkRankUp() {
-        // Tăng rank mỗi 200 điểm topicScore
-        int newRank = topicScore / 100 + 1;
-
-        if (newRank > rank) {
-            rank = newRank;
-        }
-    }
-
-
 
     // Gọi khi bắt đầu ván mới
     public void resetQuiz(String mode) {
